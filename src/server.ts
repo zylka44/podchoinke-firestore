@@ -32,6 +32,10 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+app.get('/', (req, res) => {
+  res.send('podchoinke firestore is working');
+});
+
 app.get('/products', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'users'));
   querySnapshot.forEach((doc) => {
