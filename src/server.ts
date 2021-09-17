@@ -33,7 +33,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/', (req, res) => {
-  res.send('podchoinke firestore is working');
+  res.send('podchoinke firestore is working happily!');
 });
 
 app.get('/products', async (req, res) => {
