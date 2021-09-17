@@ -74,7 +74,6 @@ app.delete('/products', async (req, res) => {
   res.send('successfuly deleted');
 });
 
-const port = 3001;
-app.listen(port, () => {
-  console.log(`api is running at http://localhost:${port}`);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`api is running on port ${process.env.PORT || 3000}`);
 });
