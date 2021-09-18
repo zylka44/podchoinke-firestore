@@ -11,6 +11,7 @@ import {
   getDocs,
   deleteDoc,
   setDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { NewUser, User } from 'models';
 import { uuid } from 'uuidv4';
@@ -39,21 +40,54 @@ app.get('/', (req, res) => {
 
 app.get('/list', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'list'));
-  res.send(querySnapshot);
+  const users = [];
+  querySnapshot.forEach((doc) => {
+    const user = { id: doc.id, ...doc.data() };
+    users.push(user);
+  });
+  res.send(users);
 });
 
 app.get('/users', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'users'));
-  res.send(querySnapshot);
+  const users = [];
+  querySnapshot.forEach((doc) => users.push(doc.data()));
+  res.send(users);
+});
+
+app.get('/users/:id', async (req, res) => {
+  const id = req.params.id;
+  const docRef = doc(db, 'users', id);
+  const user = await getDoc(docRef);
+  if (user.exists()) {
+    res.send(user.data());
+  } else {
+    res.status(400).json('No user with given id.');
+  }
+});
+
+app.post('/signin', async (req, res) => {
+  const id = req.body.id;
+  const password = req.body.password;
+  const docRef = doc(db, 'users', id);
+  const user = await getDoc(docRef);
+  const hash = Md5.hashStr(password) as string;
+  console.log('password: ', hash === user.data().password);
+  if (hash === user.data().password) {
+    res.send(user.data());
+  } else {
+    res.status(400).json('Wrong credentials.');
+  }
 });
 
 app.post('/users', async (req, res) => {
   const user: NewUser = req.body;
   const id = uuid();
   const name = user.name;
+  const email = user.email;
   const hash = Md5.hashStr(user.password) as string;
-  await setDoc(doc(db, 'list', id), { name: name });
-  await setDoc(doc(db, 'users', id), { id: id, name: name, password: hash, gifts: [], friends: [] });
+  await setDoc(doc(db, 'list', id), { id: id, email: email, name: name });
+  await setDoc(doc(db, 'users', id), { id: id, email: email, name: name, password: hash, gifts: [], friends: [] });
   res.send('user added successfuly');
 });
 
