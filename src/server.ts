@@ -13,7 +13,7 @@ import {
   setDoc,
   getDoc,
 } from 'firebase/firestore';
-import { NewUser, User } from 'models';
+import { NewUser, User, UserUpdate } from 'models';
 import { uuid } from 'uuidv4';
 import { Md5 } from 'ts-md5';
 
@@ -80,30 +80,47 @@ app.post('/signin', async (req, res) => {
   }
 });
 
-app.post('/users', async (req, res) => {
+app.post('/register', async (req, res) => {
   const user: NewUser = req.body;
   const id = uuid();
   const name = user.name;
   const email = user.email;
   const hash = Md5.hashStr(user.password) as string;
-  await setDoc(doc(db, 'list', id), { id: id, email: email, name: name });
-  await setDoc(doc(db, 'users', id), { id: id, email: email, name: name, password: hash, gifts: [], friends: [] });
-  res.send('user added successfuly');
+  await setDoc(doc(db, 'list', id), { id, email, name });
+  await setDoc(doc(db, 'users', id), {
+    timestamp: serverTimestamp(),
+    id,
+    email,
+    name,
+    password: hash,
+    gifts: [],
+    friends: [],
+  });
+  res.send('User added successfuly.');
 });
 
-app.patch('/users/:id', async (req, res) => {
-  const user: User = req.body;
+app.patch('/update/:id', async (req, res) => {
+  const user: UserUpdate = req.body;
   const id = req.params.id;
   const userToUpdate = doc(db, 'users', id);
   await updateDoc(userToUpdate, { timestamp: serverTimestamp(), ...user });
   res.send('seccessfuly updated');
 });
 
+app.patch('/password-update/:id', async (req, res) => {
+  const id = req.params.id;
+  const userToUpdate = doc(db, 'users', id);
+  const newPassword = req.body.newPassword;
+  const hash = Md5.hashStr(newPassword) as string;
+  await updateDoc(userToUpdate, { timestamp: serverTimestamp(), password: hash });
+  res.send('Seccessfuly updated.');
+});
+
 app.delete('/users/:id', async (req, res) => {
   const id = req.params.id;
   await deleteDoc(doc(db, 'list', id));
   await deleteDoc(doc(db, 'users', id));
-  res.send('successfuly deleted');
+  res.send('Successfuly deleted.');
 });
 
 const port = process.env.PORT || 3001;

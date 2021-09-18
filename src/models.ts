@@ -20,3 +20,9 @@ export interface User extends NewUser {
 export interface Gift extends NewGift {
   id: string;
 }
+
+export interface UserUpdate {
+  name: string;
+  friends: [];
+  gifts: Gift[];
+}
