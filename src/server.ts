@@ -7,73 +7,72 @@ import {
   collection,
   updateDoc,
   doc,
-  addDoc,
   serverTimestamp,
-  arrayUnion,
   getDocs,
   deleteDoc,
+  setDoc,
 } from 'firebase/firestore';
+import { NewUser, User } from 'models';
+import { uuid } from 'uuidv4';
+import { Md5 } from 'ts-md5';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyC_YhgF4FRS2BGe2EPj6ToDEQHu7cR3oA0',
-  authDomain: 'podchoinke-dd836.firebaseapp.com',
-  databaseURL: 'https://podchoinke-dd836.firebaseio.com',
-  projectId: 'podchoinke-dd836',
-  storageBucket: 'podchoinke-dd836.appspot.com',
-  messagingSenderId: '22205214738',
-  appId: '1:22205214738:web:0c778e8df3ba1756e1a8cb',
+  apiKey: 'AIzaSyBWmUbsXUFTUpKDTAnSDfTP7EiIfxs8TWQ',
+  authDomain: 'podchoinke-dev.firebaseapp.com',
+  databaseURL: 'https://podchoinke-dev-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'podchoinke-dev',
+  storageBucket: 'podchoinke-dev.appspot.com',
+  messagingSenderId: '717772155176',
+  appId: '1:717772155176:web:b924cbdf33ae240494081d',
 };
 
 const firestore = initializeApp(firebaseConfig);
 const db = getFirestore(firestore);
-
 const app = express();
 
 app.use(bodyParser.json());
 app.use(cors());
 
 app.get('/', (req, res) => {
-  res.send('podchoinke firestore is working happily!');
+  res.send('podchoinke firestore is working');
 });
 
-app.get('/products', async (req, res) => {
+app.get('/list', async (req, res) => {
+  const querySnapshot = await getDocs(collection(db, 'list'));
+  res.send(querySnapshot);
+});
+
+app.get('/users', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'users'));
-  querySnapshot.forEach((doc) => {
-    console.log(`${doc.id} => ${doc.data().name}`);
-  });
-  res.send('successfuly downloaded');
+  res.send(querySnapshot);
 });
 
-app.post('/products', async (req, res) => {
-  const data = req.body;
-  await addDoc(collection(db, 'users'), { timestamp: serverTimestamp(), ...data });
-  res.send('ok');
+app.post('/users', async (req, res) => {
+  const user: NewUser = req.body;
+  const id = uuid();
+  const name = user.name;
+  const hash = Md5.hashStr(user.password) as string;
+  await setDoc(doc(db, 'list', id), { name: name });
+  await setDoc(doc(db, 'users', id), { id: id, name: name, password: hash, gifts: [], friends: [] });
+  res.send('user added successfuly');
 });
 
-app.patch('/products', async (req, res) => {
-  const data = req.body;
-  const userToUpdate = doc(db, 'users', '0ln9Lmpc7vIPAhyOhh38');
-  //aktualizacja całego dokumentu
-  // await updateDoc(userToUpdate, {timestamp: serverTimestamp(), ...data});
-
-  // aktualizacja jednego pola dolumentu
-  await updateDoc(userToUpdate, {
-    presents: data.presents,
-  });
-
-  // dodawanie elementu do tablicy
-  await updateDoc(userToUpdate, {
-    presents: arrayUnion(data.presents),
-  });
-
+app.patch('/users/:id', async (req, res) => {
+  const user: User = req.body;
+  const id = req.params.id;
+  const userToUpdate = doc(db, 'users', id);
+  await updateDoc(userToUpdate, { timestamp: serverTimestamp(), ...user });
   res.send('seccessfuly updated');
 });
 
-app.delete('/products', async (req, res) => {
-  await deleteDoc(doc(db, 'users', '0ln9Lmpc7vIPAhyOhh38'));
+app.delete('/users/:id', async (req, res) => {
+  const id = req.params.id;
+  await deleteDoc(doc(db, 'list', id));
+  await deleteDoc(doc(db, 'users', id));
   res.send('successfuly deleted');
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`api is running on port ${process.env.PORT || 3000}`);
+const port = process.env.PORT || 3001;
+app.listen(port, () => {
+  console.log(`api is running on port ${port}`);
 });
