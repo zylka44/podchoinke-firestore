@@ -14,7 +14,6 @@ export interface User extends NewUser {
   id: string;
   friends: [];
   gifts: Gift[];
-  timestamp: string;
 }
 
 export interface Gift extends NewGift {

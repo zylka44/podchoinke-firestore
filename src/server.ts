@@ -2,17 +2,7 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 import { initializeApp } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  updateDoc,
-  doc,
-  serverTimestamp,
-  getDocs,
-  deleteDoc,
-  setDoc,
-  getDoc,
-} from 'firebase/firestore';
+import { getFirestore, collection, updateDoc, doc, getDocs, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { NewUser, User, UserUpdate } from 'models';
 import { uuid } from 'uuidv4';
 import { Md5 } from 'ts-md5';
@@ -72,7 +62,6 @@ app.post('/signin', async (req, res) => {
   const docRef = doc(db, 'users', id);
   const user = await getDoc(docRef);
   const hash = Md5.hashStr(password) as string;
-  console.log('password: ', hash === user.data().password);
   if (hash === user.data().password) {
     res.send(user.data());
   } else {
@@ -88,7 +77,6 @@ app.post('/register', async (req, res) => {
   const hash = Md5.hashStr(user.password) as string;
   await setDoc(doc(db, 'list', id), { id, email, name });
   await setDoc(doc(db, 'users', id), {
-    timestamp: serverTimestamp(),
     id,
     email,
     name,
@@ -96,31 +84,39 @@ app.post('/register', async (req, res) => {
     gifts: [],
     friends: [],
   });
-  res.send('User added successfuly.');
+  const docRef = doc(db, 'users', id);
+  const userRes = await getDoc(docRef);
+  res.send(userRes.data());
 });
 
 app.patch('/update/:id', async (req, res) => {
   const user: UserUpdate = req.body;
   const id = req.params.id;
+  const userOnListToUpdate = doc(db, 'list', id);
+  await updateDoc(userOnListToUpdate, { name: user.name });
   const userToUpdate = doc(db, 'users', id);
-  await updateDoc(userToUpdate, { timestamp: serverTimestamp(), ...user });
-  res.send('seccessfuly updated');
+  await updateDoc(userToUpdate, { ...user });
+  const docRef = doc(db, 'users', id);
+  const userRes = await getDoc(docRef);
+  res.send(userRes.data());
 });
 
 app.patch('/password-update/:id', async (req, res) => {
   const id = req.params.id;
   const userToUpdate = doc(db, 'users', id);
-  const newPassword = req.body.newPassword;
+  const newPassword = req.body.password;
   const hash = Md5.hashStr(newPassword) as string;
-  await updateDoc(userToUpdate, { timestamp: serverTimestamp(), password: hash });
-  res.send('Seccessfuly updated.');
+  await updateDoc(userToUpdate, { password: hash });
+  const docRef = doc(db, 'users', id);
+  const userRes = await getDoc(docRef);
+  res.send(userRes.data());
 });
 
 app.delete('/users/:id', async (req, res) => {
   const id = req.params.id;
   await deleteDoc(doc(db, 'list', id));
   await deleteDoc(doc(db, 'users', id));
-  res.send('Successfuly deleted.');
+  res.send(id);
 });
 
 const port = process.env.PORT || 3001;
