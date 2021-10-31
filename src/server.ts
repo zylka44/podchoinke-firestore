@@ -28,20 +28,13 @@ app.get('/', (req, res) => {
   res.send('podchoinke firestore is working');
 });
 
-app.get('/list', async (req, res) => {
-  const querySnapshot = await getDocs(collection(db, 'list'));
-  const users = [];
-  querySnapshot.forEach((doc) => {
-    const user = { id: doc.id, ...doc.data() };
-    users.push(user);
-  });
-  res.send(users);
-});
-
 app.get('/users', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'users'));
   const users = [];
-  querySnapshot.forEach((doc) => users.push(doc.data()));
+  querySnapshot.forEach((doc) => {
+    const { id, name, email, friends } = doc.data();
+    users.push({ id, name, email, friends });
+  });
   res.send(users);
 });
 
@@ -50,7 +43,8 @@ app.get('/users/:id', async (req, res) => {
   const docRef = doc(db, 'users', id);
   const user = await getDoc(docRef);
   if (user.exists()) {
-    res.send(user.data());
+    const { name, email, friends, gifts } = user.data();
+    res.send({ id, name, email, friends, gifts });
   } else {
     res.status(400).json('No user with given id.');
   }
@@ -63,7 +57,8 @@ app.post('/signin', async (req, res) => {
   const user = await getDoc(docRef);
   const hash = Md5.hashStr(password) as string;
   if (hash === user.data().password) {
-    res.send(user.data());
+    const { name, email, friends, gifts } = user.data();
+    res.send({ id, name, email, friends, gifts });
   } else {
     res.status(400).json('Wrong credentials.');
   }
@@ -75,7 +70,6 @@ app.post('/register', async (req, res) => {
   const name = user.name;
   const email = user.email;
   const hash = Md5.hashStr(user.password) as string;
-  await setDoc(doc(db, 'list', id), { id, email, name });
   await setDoc(doc(db, 'users', id), {
     id,
     email,
@@ -86,19 +80,25 @@ app.post('/register', async (req, res) => {
   });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
-  res.send(userRes.data());
+  const userData = userRes.data();
+  const newUser = {
+    id: userData.id,
+    name: userData.name,
+    email: userData.email,
+    friends: userData.friends,
+  };
+  res.send(newUser);
 });
 
 app.patch('/update/:id', async (req, res) => {
   const user: UserUpdate = req.body;
   const id = req.params.id;
-  const userOnListToUpdate = doc(db, 'list', id);
-  await updateDoc(userOnListToUpdate, { name: user.name });
   const userToUpdate = doc(db, 'users', id);
   await updateDoc(userToUpdate, { ...user });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
-  res.send(userRes.data());
+  const { name, email, friends, gifts } = userRes.data();
+  res.send({ id, name, email, friends, gifts });
 });
 
 app.patch('/password-update/:id', async (req, res) => {
@@ -109,12 +109,12 @@ app.patch('/password-update/:id', async (req, res) => {
   await updateDoc(userToUpdate, { password: hash });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
-  res.send(userRes.data());
+  const { name, email, friends, gifts } = userRes.data();
+  res.send({ id, name, email, friends, gifts });
 });
 
 app.delete('/users/:id', async (req, res) => {
   const id = req.params.id;
-  await deleteDoc(doc(db, 'list', id));
   await deleteDoc(doc(db, 'users', id));
   res.send(id);
 });
