@@ -1,3 +1,11 @@
+export interface Group {
+  name: string;
+  password: string;
+  admin: string;
+  members?: string[];
+  id?: string;
+}
+
 export interface NewUser {
   name: string;
   email: string;

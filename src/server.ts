@@ -3,18 +3,18 @@ import bodyParser from 'body-parser';
 import cors from 'cors';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, updateDoc, doc, getDocs, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
-import { NewUser, User, UserUpdate } from 'models';
+import { Group, NewUser, UserUpdate } from 'models';
 import { uuid } from 'uuidv4';
 import { Md5 } from 'ts-md5';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyC_YhgF4FRS2BGe2EPj6ToDEQHu7cR3oA0',
-  authDomain: 'podchoinke-dd836.firebaseapp.com',
-  databaseURL: 'https://podchoinke-dd836.firebaseio.com',
-  projectId: 'podchoinke-dd836',
-  storageBucket: 'podchoinke-dd836.appspot.com',
-  messagingSenderId: '22205214738',
-  appId: '1:22205214738:web:0c778e8df3ba1756e1a8cb',
+  apiKey: 'AIzaSyBWmUbsXUFTUpKDTAnSDfTP7EiIfxs8TWQ',
+  authDomain: 'podchoinke-dev.firebaseapp.com',
+  databaseURL: 'https://podchoinke-dev-default-rtdb.europe-west1.firebasedatabase.app',
+  projectId: 'podchoinke-dev',
+  storageBucket: 'podchoinke-dev.appspot.com',
+  messagingSenderId: '717772155176',
+  appId: '1:717772155176:web:b924cbdf33ae240494081d',
 };
 
 const firestore = initializeApp(firebaseConfig);
@@ -26,6 +26,66 @@ app.use(cors());
 
 app.get('/', (req, res) => {
   res.send('podchoinke firestore is working');
+});
+
+app.get('/groups/:id', async (req, res) => {
+  const userId = req.params.id;
+  const querySnapshot = await getDocs(collection(db, 'groups'));
+  const groups = [];
+  querySnapshot.forEach((doc) => {
+    const { id, name, admin, members } = doc.data();
+    members.includes(userId) && groups.push({ id, name, admin, members });
+  });
+  res.send(groups);
+});
+
+app.post('/add-group', async (req, res) => {
+  const group: Group = req.body;
+  const id = uuid();
+  const { name, password, admin } = group;
+  const hash = Md5.hashStr(password) as string;
+  await setDoc(doc(db, 'groups', id), {
+    id,
+    name,
+    password: hash,
+    admin,
+    members: [admin],
+  });
+  const docRef = doc(db, 'groups', id);
+  const groupRes = await getDoc(docRef);
+  const groupData = groupRes.data();
+  const newGroup = {
+    id: groupData.id,
+    name: groupData.name,
+    admin: groupData.admin,
+    members: groupData.members,
+  };
+  res.send(newGroup);
+});
+
+app.patch('/group/:id', async (req, res) => {
+  const id = req.params.id;
+  const { password, member } = req.body;
+  const docRef = doc(db, 'groups', id);
+  const group = await getDoc(docRef);
+  const hash = Md5.hashStr(password) as string;
+  if (hash === group.data().password) {
+    const currentMembers = group.data().members;
+    const groupToUpdate = doc(db, 'groups', id);
+    await updateDoc(groupToUpdate, { members: [...currentMembers, member] });
+    const updatedDocRef = doc(db, 'groups', id);
+    const updatedGroup = await getDoc(updatedDocRef);
+    const { name, admin, members } = updatedGroup.data();
+    res.send({ id, name, admin, members });
+  } else {
+    res.status(400).json('Wrong credentials.');
+  }
+});
+
+app.delete('/group/:id', async (req, res) => {
+  const id = req.params.id;
+  await deleteDoc(doc(db, 'groups', id));
+  res.send(id);
 });
 
 app.get('/users', async (req, res) => {
