@@ -28,13 +28,12 @@ app.get('/', (req, res) => {
   res.send('podchoinke firestore is working');
 });
 
-app.get('/groups/:id', async (req, res) => {
-  const userId = req.params.id;
+app.get('/groups/', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'groups'));
   const groups = [];
   querySnapshot.forEach((doc) => {
     const { id, name, admin, members } = doc.data();
-    members.includes(userId) && groups.push({ id, name, admin, members });
+    groups.push({ id, name, admin, members });
   });
   res.send(groups);
 });
