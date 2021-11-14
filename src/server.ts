@@ -81,6 +81,18 @@ app.patch('/group/:id', async (req, res) => {
   }
 });
 
+app.patch('/leave/:id', async (req, res) => {
+  const id = req.params.id;
+  const member = req.body.member;
+  const docRef = doc(db, 'groups', id);
+  const group = await getDoc(docRef);
+  const updatedMembers = group.data().members.filter((m) => m !== member);
+  const updatedGroup = { ...group.data(), members: updatedMembers };
+  const groupToUpdate = doc(db, 'groups', id);
+  await updateDoc(groupToUpdate, updatedGroup);
+  res.send(updatedGroup);
+});
+
 app.delete('/group/:id', async (req, res) => {
   const id = req.params.id;
   await deleteDoc(doc(db, 'groups', id));
