@@ -77,7 +77,7 @@ app.patch('/group/:id', async (req, res) => {
     const { name, admin, members } = updatedGroup.data();
     res.send({ id, name, admin, members });
   } else {
-    res.status(400).json('Wrong credentials.');
+    res.json('Wrong credentials.');
   }
 });
 
@@ -117,7 +117,7 @@ app.get('/users/:id', async (req, res) => {
     const { name, email, friends, gifts } = user.data();
     res.send({ id, name, email, friends, gifts });
   } else {
-    res.status(400).json('No user with given id.');
+    res.json('No user with given id.');
   }
 });
 
@@ -131,7 +131,7 @@ app.post('/signin', async (req, res) => {
     const { name, email, friends, gifts } = user.data();
     res.send({ id, name, email, friends, gifts });
   } else {
-    res.status(400).json('Wrong credentials.');
+    res.json('Wrong credentials.');
   }
 });
 
