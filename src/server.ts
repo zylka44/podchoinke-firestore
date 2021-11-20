@@ -4,7 +4,6 @@ import cors from 'cors';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, updateDoc, doc, getDocs, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { Group, NewUser, UserUpdate } from 'models';
-import { uuid } from 'uuidv4';
 import { Md5 } from 'ts-md5';
 
 const firebaseConfig = {
@@ -39,8 +38,13 @@ app.get('/groups/', async (req, res) => {
 });
 
 app.post('/add-group', async (req, res) => {
+  const querySnapshot = await getDocs(collection(db, 'groups'));
+  const ids = [];
+  querySnapshot.forEach((doc) => {
+    ids.push(doc.data().id);
+  });
   const group: Group = req.body;
-  const id = uuid();
+  const id = createId(ids);
   const { name, password, admin } = group;
   const hash = Md5.hashStr(password) as string;
   await setDoc(doc(db, 'groups', id), {
@@ -136,8 +140,13 @@ app.post('/signin', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
+  const querySnapshot = await getDocs(collection(db, 'users'));
+  const ids = [];
+  querySnapshot.forEach((doc) => {
+    ids.push(doc.data().id);
+  });
   const user: NewUser = req.body;
-  const id = uuid();
+  const id = createId(ids);
   const name = user.name;
   const email = user.email;
   const hash = Md5.hashStr(user.password) as string;
@@ -194,3 +203,11 @@ const port = process.env.PORT || 3001;
 app.listen(port, () => {
   console.log(`api is running on port ${port}`);
 });
+
+const createId = (ids: number[]): string => {
+  if (ids.length === 0) {
+    return '0';
+  }
+  const newId = Math.max(...ids) + 1;
+  return newId.toString();
+};
