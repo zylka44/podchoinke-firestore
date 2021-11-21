@@ -7,13 +7,13 @@ import { Group, NewUser, UserUpdate } from 'models';
 import { Md5 } from 'ts-md5';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBWmUbsXUFTUpKDTAnSDfTP7EiIfxs8TWQ',
-  authDomain: 'podchoinke-dev.firebaseapp.com',
-  databaseURL: 'https://podchoinke-dev-default-rtdb.europe-west1.firebasedatabase.app',
-  projectId: 'podchoinke-dev',
-  storageBucket: 'podchoinke-dev.appspot.com',
-  messagingSenderId: '717772155176',
-  appId: '1:717772155176:web:b924cbdf33ae240494081d',
+  apiKey: 'AIzaSyC_YhgF4FRS2BGe2EPj6ToDEQHu7cR3oA0',
+  authDomain: 'podchoinke-dd836.firebaseapp.com',
+  databaseURL: 'https://podchoinke-dd836.firebaseio.com',
+  projectId: 'podchoinke-dd836',
+  storageBucket: 'podchoinke-dd836.appspot.com',
+  messagingSenderId: '22205214738',
+  appId: '1:22205214738:web:0c778e8df3ba1756e1a8cb',
 };
 
 const firestore = initializeApp(firebaseConfig);
