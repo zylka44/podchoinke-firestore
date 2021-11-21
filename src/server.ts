@@ -107,8 +107,8 @@ app.get('/users', async (req, res) => {
   const querySnapshot = await getDocs(collection(db, 'users'));
   const users = [];
   querySnapshot.forEach((doc) => {
-    const { id, name, email, friends } = doc.data();
-    users.push({ id, name, email, friends });
+    const { id, name, email } = doc.data();
+    users.push({ id, name, email });
   });
   res.send(users);
 });
@@ -118,8 +118,8 @@ app.get('/users/:id', async (req, res) => {
   const docRef = doc(db, 'users', id);
   const user = await getDoc(docRef);
   if (user.exists()) {
-    const { name, email, friends, gifts } = user.data();
-    res.send({ id, name, email, friends, gifts });
+    const { name, email, gifts } = user.data();
+    res.send({ id, name, email, gifts });
   } else {
     res.json('No user with given id.');
   }
@@ -132,8 +132,8 @@ app.post('/signin', async (req, res) => {
   const user = await getDoc(docRef);
   const hash = Md5.hashStr(password) as string;
   if (hash === user.data().password) {
-    const { name, email, friends, gifts } = user.data();
-    res.send({ id, name, email, friends, gifts });
+    const { name, email, gifts } = user.data();
+    res.send({ id, name, email, gifts });
   } else {
     res.json('Wrong credentials.');
   }
@@ -156,7 +156,6 @@ app.post('/register', async (req, res) => {
     name,
     password: hash,
     gifts: [],
-    friends: [],
   });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
@@ -165,7 +164,6 @@ app.post('/register', async (req, res) => {
     id: userData.id,
     name: userData.name,
     email: userData.email,
-    friends: userData.friends,
   };
   res.send(newUser);
 });
@@ -177,8 +175,8 @@ app.patch('/update/:id', async (req, res) => {
   await updateDoc(userToUpdate, { ...user });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
-  const { name, email, friends, gifts } = userRes.data();
-  res.send({ id, name, email, friends, gifts });
+  const { name, email, gifts } = userRes.data();
+  res.send({ id, name, email, gifts });
 });
 
 app.patch('/password-update/:id', async (req, res) => {
@@ -189,12 +187,24 @@ app.patch('/password-update/:id', async (req, res) => {
   await updateDoc(userToUpdate, { password: hash });
   const docRef = doc(db, 'users', id);
   const userRes = await getDoc(docRef);
-  const { name, email, friends, gifts } = userRes.data();
-  res.send({ id, name, email, friends, gifts });
+  const { name, email, gifts } = userRes.data();
+  res.send({ id, name, email, gifts });
 });
 
 app.delete('/users/:id', async (req, res) => {
   const id = req.params.id;
+  const querySnapshot = await getDocs(collection(db, 'groups'));
+  querySnapshot.forEach(async (group) => {
+    const { id: groupId, admin, members } = group.data();
+    if (admin === id) {
+      await deleteDoc(doc(db, 'groups', groupId));
+    } else if (members.includes(id)) {
+      const updatedMembers = group.data().members.filter((m) => m !== id);
+      const updatedGroup = { ...group.data(), members: updatedMembers };
+      const groupToUpdate = doc(db, 'groups', group.id);
+      await updateDoc(groupToUpdate, updatedGroup);
+    }
+  });
   await deleteDoc(doc(db, 'users', id));
   res.send(id);
 });
